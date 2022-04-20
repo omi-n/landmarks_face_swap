@@ -37,6 +37,7 @@ swap = cv2.cvtColor(swap, cv2.COLOR_RGB2BGR)
 # Get the landmark list, and the convex hull. Take those and get all the
 #   delaunay triangles.
 swap_landmarks = landmark_util.get_landmark_list(results2.face_landmarks.landmark, swap.shape)
+#landmark_util.draw_landmarks(swap, swap_landmarks)
 swap_hull = cv2.convexHull(swap_landmarks)
 all_triangle_indices = triangle_util.full_triangle_index_pipeline(swap_landmarks, swap_hull)
 
@@ -73,7 +74,7 @@ while capture.isOpened():
     # Possible improvements:
     # multithreading
     # changing everything possible to numpy
-    # porting to cpp, -O3 (NOT RECOMMENDED)
+    # porting to cpp (NOT RECOMMENDED)
     for triangle in all_triangle_indices:
         # Get the positions of each triangle in the image.
         swap_1, swap_2, swap_3 = triangle_util.get_triangle_positions(swap_landmarks, triangle)
@@ -100,8 +101,6 @@ while capture.isOpened():
 
 
         # Warping Masks
-        # SOURCE: https://analyticsindiamag.com/a-fun-project-on-building-a-face-swapping-application-with-opencv/
-        # HEAVILY MODIFIED + IMPROVED TO WORK WITH 468LMs
         points = np.float32(points)
         swap_points = np.float32(swap_points)
 
@@ -128,6 +127,10 @@ while capture.isOpened():
     # Apply 1 iteration of dilation with 2x2 kernel to get rid of hard lines
     kernel = np.ones((2, 2), np.uint8)
     new_face = cv2.dilate(new_face, kernel, iterations=1)
+
+    # Uncomment to show reconstructed face
+    cv2.imshow("new_face", new_face)
+
     # Get the convex hull for the head mask
     hull = cv2.convexHull(landmark_points)
 
