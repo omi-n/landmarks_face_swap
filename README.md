@@ -6,7 +6,7 @@ work fine.
 
 
 ## Instructions
-1. Install all dependencies with: `pip -r requirements.txt`
+1. Install all dependencies with: `pip install -r requirements.txt`
 2. Run the application with `python hollistic.py <image_to_swap_with>`
 
 ## Common Issues

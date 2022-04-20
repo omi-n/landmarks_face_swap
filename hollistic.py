@@ -129,7 +129,7 @@ while capture.isOpened():
     new_face = cv2.dilate(new_face, kernel, iterations=1)
 
     # Uncomment to show reconstructed face
-    cv2.imshow("new_face", new_face)
+    cv2.imshow("new_face", cv2.flip(new_face, 1))
 
     # Get the convex hull for the head mask
     hull = cv2.convexHull(landmark_points)
@@ -158,7 +158,7 @@ while capture.isOpened():
     end = timeit.default_timer() - start
     fps = 1 / end
     cv2.putText(result, f"FPS: {fps:.1f}", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA, False)
-    cv2.imshow("after swap", result)
+    cv2.imshow("after swap", cv2.flip(result, 1))
     if cv2.waitKey(5) & 0xFF == ord('d'):
         break
 capture.release()
