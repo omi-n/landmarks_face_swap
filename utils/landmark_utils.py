@@ -9,11 +9,11 @@ def draw_landmarks(image, landmarks):
 
 
 def get_landmark_list(normalized_list, image_dimensions):
-    length = image_dimensions[1]
+    width = image_dimensions[1]
     height = image_dimensions[0]
     landmark_list = []
     for landmark in normalized_list:
-        x = int(landmark.x * length)
+        x = int(landmark.x * width)
         y = int(landmark.y * height)
         landmark_list.append((x, y))
     return np.array(landmark_list, dtype=np.int32)
