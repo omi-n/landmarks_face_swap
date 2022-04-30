@@ -7,7 +7,7 @@ work fine.
 
 ## Instructions for Demo
 1. Install all dependencies with: `pip install -r requirements.txt`
-2. Run the application with `python demo.py <image_to_swap_with> --<flag> <arg>`
+2. Run the application with `python demo.py --image <image_to_swap_with> --<flag> <arg>`
 
 You can get help by running `python demo.py --help`
 
