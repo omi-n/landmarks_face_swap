@@ -1,7 +1,32 @@
 from facemeshes import triangle_utils as tu
-
+from facemeshes import rotation_utils as ru
+from facemeshes import cv_utils as cu
+import timeit
 import numpy as np
 import cv2
+
+
+def draw_debug(image, point, image_points, rotation, start):
+    ru.draw_pose_lines(image, point, image_points)
+    ru.draw_pose_degrees(image, rotation)
+    fps = 1 / (timeit.default_timer() - start)
+    cu.draw_text_on_image(image, f"FPS: {fps: .1f}", (0, 50))
+
+
+def place_mesh_on_image(image, landmarks, face_mesh):
+    hull = cv2.convexHull(landmarks)
+    # This section takes the image, and puts a big black area where our face was.
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_mask = np.zeros_like(image_gray)
+    # Fill the convex hull with white
+    image_head_mask = cv2.fillConvexPoly(image_mask, hull, (255, 255, 255))
+    # Flip all the bits so our face is black and everything else is white.
+    image_mask = cv2.bitwise_not(image_mask)
+    # Remove our face from our image. 0 AND anything = 0, and all is 0 on our face.
+    image_no_face = cv2.bitwise_and(image, image, mask=image_mask)
+    # Put the generated face from the swap in. This leaves some black squares where we missed some spots.
+    result = cv2.add(image_no_face, face_mesh)
+    return result, image_head_mask, hull
 
 
 def generate_fitted_mesh(image: np.ndarray,

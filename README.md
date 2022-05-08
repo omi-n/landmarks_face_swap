@@ -27,6 +27,9 @@ You can get help by running `python demo.py --help`
 `--mesh-only <true/false>`
 * (Default false) If you only care about the mesh output.
 
+`--debug <true/false>`
+* (Default false) If you want to see data and visualizations of pose, and framerate.
+
 ## Using `facemeshes/` as a library
 There is included documentation for each of the files in their definitions. To generate
 a warped face mesh from some passed in image fitted to your face dimensions, you can use
@@ -53,6 +56,23 @@ face_mesh = fm.generate_fitted_mesh(image,
 face_mesh = cv2.flip(face_mesh, 1)
 
 cv2.imshow("Generated Mesh", face_mesh)
+```
+
+If you want to put that image on top of a face, you can use the `place_mesh_on_image` function, as shown below.
+```python
+# assume previous segment
+fm.place_mesh_on_image(image, landmarks, face_mesh)
+```
+
+You can also show all data with the `--debug true` flag, but it's also possible to use `rotation_utils`.
+For example, this following segment gets the rotation angles of the face.
+```python
+# assume all previous segments
+from facemeshes import rotation_utils as ru
+
+img_pts, model_pts, rotate_degrees, nose = ru.face_orientation(image, landmarks)
+ru.draw_pose_lines(image, nose, img_pts)
+ru.draw_pose_degrees(image, rotate_degrees)
 ```
 
 ## Common Issues
