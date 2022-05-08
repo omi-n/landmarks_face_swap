@@ -1,9 +1,6 @@
 # Face Swapping Using Meshes
-To use this project, you will need the latest version of pip and
-some fairly up-to-date python version. I have personally
-tested this application using python 3.10, but 3.8 and above should
-work fine.
-
+To use this project, you will need at least python 3.6. This project has been tested and used
+extensively on python 3.10.4.
 
 ## Instructions for Demo
 1. Install all dependencies with: `pip install -r requirements.txt`
