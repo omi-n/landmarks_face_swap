@@ -59,8 +59,8 @@ while capture.isOpened():
 
     if args.mesh_only == "true":
         if args.debug == "true":
-            img_pts, model_pts, rotate_degree, nose = ru.face_orientation(face_mesh, landmarks)
-            fm.draw_debug(face_mesh, nose, img_pts, rotate_degree, start)
+            img_pts, rotate_degree = ru.face_orientation(face_mesh, landmarks)
+            fm.draw_debug(face_mesh, landmarks[4], img_pts, rotate_degree, start)
 
         cv2.imshow("constructed mesh", face_mesh)
     else:
@@ -74,8 +74,8 @@ while capture.isOpened():
             result = cv2.seamlessClone(result, image, image_head_mask, center, cv2.MIXED_CLONE)
 
         if args.debug == "true":
-            img_pts, model_pts, rotate_degree, nose = ru.face_orientation(result, landmarks)
-            fm.draw_debug(result, nose, img_pts, rotate_degree, start)
+            img_pts, rotate_degree = ru.face_orientation(result, landmarks)
+            fm.draw_debug(result, landmarks[4], img_pts, rotate_degree, start)
 
         cv2.imshow("Face Swap", result)
 

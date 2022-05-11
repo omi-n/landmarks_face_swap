@@ -7,6 +7,16 @@ import cv2
 
 
 def draw_debug(image, point, image_points, rotation, start):
+    """
+
+    :param image:
+    :param point:
+    :param image_points:
+    :param rotation:
+    :param start:
+    :return:
+    """
+
     ru.draw_pose_lines(image, point, image_points)
     ru.draw_pose_degrees(image, rotation)
     fps = 1 / (timeit.default_timer() - start)
@@ -14,6 +24,14 @@ def draw_debug(image, point, image_points, rotation, start):
 
 
 def place_mesh_on_image(image, landmarks, face_mesh):
+    """
+
+    :param image:
+    :param landmarks:
+    :param face_mesh:
+    :return:
+    """
+
     hull = cv2.convexHull(landmarks)
     # This section takes the image, and puts a big black area where our face was.
     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

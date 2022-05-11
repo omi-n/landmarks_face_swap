@@ -8,8 +8,6 @@ def face_orientation(image, landmarks):
     """
     SOURCES:
 
-    https://github.com/jerryhouuu/Face-Yaw-Roll-Pitch-from-Pose-Estimation-using-OpenCV
-
     https://learnopencv.com/head-pose-estimation-using-opencv-and-dlib/
 
     Adapted to work with mediapipe.
@@ -20,56 +18,87 @@ def face_orientation(image, landmarks):
     """
 
     size = image.shape
+    # Part 1: 2D coordinates of a few points
+    # Important landmarks for tracking pose according to linked article
     image_points = np.array([
-        landmarks[4],
-        landmarks[199],
-        landmarks[130],
-        landmarks[263],
-        landmarks[62],
-        landmarks[308]
+        landmarks[4],    # Nose Tip
+        landmarks[199],  # Chin
+        landmarks[130],  # Left Corner, Left Eye
+        landmarks[263],  # Right Corner, Right Eye
+        landmarks[62],   # Left Corner, Mouth
+        landmarks[308]   # Right Corner, Mouth
     ], dtype="double")
 
+    # Part 2: 3D coordinates of the same points
+    # World points for some generic 3d model. Don't need anything fancy
+    # Note: THESE ARE COMPLETELY ARBITRARY!
+    # They don't mean anything.
     world = np.array([
-        (0.0, 0.0, 0.0),
-        (0.0, -330.0, -65.0),
-        (-165.0, 170.0, -135.0),
-        (165.0, 170.0, -135.0),
-        (-150.0, -150.0, -125.0),
-        (150.0, -150.0, -125.0)
+        (0.0, 0.0, 0.0),            # Nose Tip
+        (0.0, -330.0, -65.0),       # Chin
+        (-165.0, 170.0, -135.0),    # Left Corner, Left Eye
+        (165.0, 170.0, -135.0),     # Right Corner, Right Eye
+        (-150.0, -150.0, -125.0),   # Left Corner, Mouth
+        (150.0, -150.0, -125.0)     # Right Corner, Mouth
     ], dtype="double")
 
-    center = (size[1] / 2, size[0] / 2)
-    focal_length = center[0] / np.tan(60 / 2 * np.pi / 180)
+    # Part 3: Intrinsic parameters of the camera
+    # Approximating Focal Length: https://learnopencv.com/approximate-focal-length-for-webcams-and-cell-phone-cameras/
+    center_x, center_y = (size[1] / 2, size[0] / 2)
+    focal_length = center_x / np.tan(60 / 2 * np.pi / 180)
+
+    # Direct linear transform: with 0 distortion (no GoPro)
+    # [x] = [focal  0  center_x] = [X]
+    # [y] = [0  focal  center_y] = [Y]
+    # [1] = [0      0         1] = [Z]
     camera_matrix = np.array(
-        [[focal_length, 0, center[0]],
-         [0, focal_length, center[1]],
+        [[focal_length, 0, center_x],
+         [0, focal_length, center_y],
          [0, 0, 1]], dtype="double"
     )
 
-    dist_coeffs = np.zeros((4, 1))
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(world, image_points, camera_matrix,
-                                                                  dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+    # solvePnPRansac should be used instead of solvePnP if the underlying data is noisy
+    # distortion_coefficients being 0 means that we assume there is no distortion
+    # according to the article, this is not an issue unless we are using a gopro camera.
+    distortion_coefficients = np.zeros((4, 1))
+    (success, rotation_vector, translation_vector) = cv2.solvePnP(world,
+                                                                  image_points,
+                                                                  camera_matrix,
+                                                                  distortion_coefficients,
+                                                                  flags=cv2.SOLVEPNP_ITERATIVE)
 
     axis = np.float32([[500, 0, 0],
                        [0, 500, 0],
                        [0, 0, 500]])
 
-    imgpts, jac = cv2.projectPoints(axis, rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-    worldpts, jac2 = cv2.projectPoints(world, rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-    rvec_matrix = cv2.Rodrigues(rotation_vector)[0]
+    # computes projections of 3D points to the image plane
+    image_points, _ = cv2.projectPoints(axis,
+                                        rotation_vector,
+                                        translation_vector,
+                                        camera_matrix,
+                                        distortion_coefficients)
+    rotation_matrix = cv2.Rodrigues(rotation_vector)[0]
 
-    imgpts = np.array(imgpts, dtype=int)
+    # np.hstack stacks arrays per column (concat along second axis)
+    projection_matrix = np.hstack((rotation_matrix, translation_vector))
 
-    proj_matrix = np.hstack((rvec_matrix, translation_vector))
-    eulerAngles = cv2.decomposeProjectionMatrix(proj_matrix)[6]
+    # decomposes a projection matrix into a rotation matrix
+    # 6th element in the output are the euler angles. the first 5 are:
+    # camera matrix, rotation matrix, translation vector, rotation matrix (x, y, z)
+    euler_angles = cv2.decomposeProjectionMatrix(projection_matrix)[6]
 
-    pitch, yaw, roll = [math.radians(_) for _ in eulerAngles]
+    # euler angles is in degrees
+    pitch, yaw, roll = [i for i in euler_angles]
 
-    pitch = math.degrees(math.asin(math.sin(pitch)))
-    roll = -math.degrees(math.asin(math.sin(roll)))
-    yaw = math.degrees(math.asin(math.sin(yaw)))
+    # the angle decompose returns is a bit wierd, going from -180 to 180 in the middle.
+    # we can fix this by modifying the function. see the graph below.
+    # normally this function would be from 0 to -180 fom the bottom. this is because the 0 angle would be
+    # the straight line going "up" and "down". we can rotate this by 90* by doing asin(sin(x)) where x is pitch.
+    # see the graph below.
+    # https://www.desmos.com/calculator/4894emd0fr
+    pitch = math.degrees(math.asin(math.sin(math.radians(pitch))))
 
-    return imgpts, worldpts, (str(int(roll)), str(int(pitch)), str(int(yaw))), landmarks[4]
+    return np.array(image_points, dtype=int), (str(int(pitch)), str(int(yaw)), str(int(roll)))
 
 
 def draw_pose_degrees(image, rotate_degree):
@@ -80,9 +109,9 @@ def draw_pose_degrees(image, rotate_degree):
     :return:
     """
 
-    cu.draw_text_on_image(image, f"ROLL: {rotate_degree[0]}", (0, 80))
-    cu.draw_text_on_image(image, f"TILT: {rotate_degree[1]}", (0, 110))
-    cu.draw_text_on_image(image, f"YAW: {rotate_degree[2]}", (0, 140))
+    cu.draw_text_on_image(image, f"TILT/PITCH: {rotate_degree[0]}", (0, 80))
+    cu.draw_text_on_image(image, f"YAW: {rotate_degree[1]}", (0, 110))
+    cu.draw_text_on_image(image, f"ROLL: {rotate_degree[2]}", (0, 140))
 
 
 def draw_pose_lines(image, point, image_pts):
