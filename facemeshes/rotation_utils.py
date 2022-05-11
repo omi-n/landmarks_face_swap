@@ -5,6 +5,20 @@ import cv2
 
 
 def face_orientation(image, landmarks):
+    """
+    SOURCES:
+
+    https://github.com/jerryhouuu/Face-Yaw-Roll-Pitch-from-Pose-Estimation-using-OpenCV
+
+    https://learnopencv.com/head-pose-estimation-using-opencv-and-dlib/
+
+    Adapted to work with mediapipe.
+
+    :param image:
+    :param landmarks:
+    :return:
+    """
+
     size = image.shape
     image_points = np.array([
         landmarks[4],
@@ -16,12 +30,12 @@ def face_orientation(image, landmarks):
     ], dtype="double")
 
     world = np.array([
-        (0.0, 0.0, 0.0),  # Nose tip
-        (0.0, -330.0, -65.0),  # Chin
-        (-165.0, 170.0, -135.0),  # Left eye left corner
-        (165.0, 170.0, -135.0),  # Right eye right corne
-        (-150.0, -150.0, -125.0),  # Left Mouth corner
-        (150.0, -150.0, -125.0)  # Right mouth corner
+        (0.0, 0.0, 0.0),
+        (0.0, -330.0, -65.0),
+        (-165.0, 170.0, -135.0),
+        (165.0, 170.0, -135.0),
+        (-150.0, -150.0, -125.0),
+        (150.0, -150.0, -125.0)
     ], dtype="double")
 
     center = (size[1] / 2, size[0] / 2)
@@ -32,7 +46,7 @@ def face_orientation(image, landmarks):
          [0, 0, 1]], dtype="double"
     )
 
-    dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
+    dist_coeffs = np.zeros((4, 1))
     (success, rotation_vector, translation_vector) = cv2.solvePnP(world, image_points, camera_matrix,
                                                                   dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
@@ -59,12 +73,27 @@ def face_orientation(image, landmarks):
 
 
 def draw_pose_degrees(image, rotate_degree):
+    """
+
+    :param image:
+    :param rotate_degree:
+    :return:
+    """
+
     cu.draw_text_on_image(image, f"ROLL: {rotate_degree[0]}", (0, 80))
     cu.draw_text_on_image(image, f"TILT: {rotate_degree[1]}", (0, 110))
     cu.draw_text_on_image(image, f"YAW: {rotate_degree[2]}", (0, 140))
 
 
 def draw_pose_lines(image, point, image_pts):
+    """
+
+    :param image:
+    :param point:
+    :param image_pts:
+    :return:
+    """
+
     cv2.line(image, point, tuple(image_pts[1].ravel()), (0, 255, 0), 3)
     cv2.line(image, point, tuple(image_pts[0].ravel()), (255, 0, 0), 3)
     cv2.line(image, point, tuple(image_pts[2].ravel()), (0, 0, 255), 3)
