@@ -48,9 +48,9 @@ def face_orientation(image, landmarks):
     focal_length = center_x / np.tan(60 / 2 * np.pi / 180)
 
     # Direct linear transform: with 0 distortion (no GoPro)
-    # [x] = [focal  0  center_x] = [X]
-    # [y] = [0  focal  center_y] = [Y]
-    # [1] = [0      0         1] = [Z]
+    # [x] = [focal  0  center_x] [X]
+    # [y] = [0  focal  center_y] [Y]
+    # [1] = [0      0         1] [Z]
     camera_matrix = np.array(
         [[focal_length, 0, center_x],
          [0, focal_length, center_y],
