@@ -45,7 +45,7 @@ def face_orientation(image, landmarks):
     # Part 3: Intrinsic parameters of the camera
     # Approximating Focal Length: https://learnopencv.com/approximate-focal-length-for-webcams-and-cell-phone-cameras/
     center_x, center_y = (size[1] / 2, size[0] / 2)
-    focal_length = center_x / np.tan(60 / 2 * np.pi / 180)
+    focal_length = center_x / np.tan(math.radians(30))
 
     # Direct linear transform: with 0 distortion (no GoPro)
     # [x] = [focal  0  center_x] [X]
@@ -67,16 +67,6 @@ def face_orientation(image, landmarks):
                                                                   distortion_coefficients,
                                                                   flags=cv2.SOLVEPNP_ITERATIVE)
 
-    axis = np.float32([[500, 0, 0],
-                       [0, 500, 0],
-                       [0, 0, 500]])
-
-    # computes projections of 3D points to the image plane
-    image_points, _ = cv2.projectPoints(axis,
-                                        rotation_vector,
-                                        translation_vector,
-                                        camera_matrix,
-                                        distortion_coefficients)
     rotation_matrix = cv2.Rodrigues(rotation_vector)[0]
 
     # np.hstack stacks arrays per column (concat along second axis)
@@ -91,12 +81,26 @@ def face_orientation(image, landmarks):
     pitch, yaw, roll = [i for i in euler_angles]
 
     # the angle decompose returns is a bit wierd, going from -180 to 180 in the middle.
-    # we can fix this by modifying the function. see the graph below.
+    # we can fix this by modifying the function.
     # normally this function would be from 0 to -180 fom the bottom. this is because the 0 angle would be
     # the straight line going "up" and "down". we can rotate this by 90* by doing asin(sin(x)) where x is pitch.
+    # since it restricts x to [-pi/2, pi/2].
     # see the graph below.
     # https://www.desmos.com/calculator/4894emd0fr
     pitch = math.degrees(math.asin(math.sin(math.radians(pitch))))
+
+    # This is for the visualizations. We project the vectors with magnitude
+    # 255 in each way.
+    axis = np.float32([[255, 0, 0],
+                       [0, 255, 0],
+                       [0, 0, 255]])
+
+    # computes projections of 3D points to the image plane
+    image_points, _ = cv2.projectPoints(axis,
+                                        rotation_vector,
+                                        translation_vector,
+                                        camera_matrix,
+                                        distortion_coefficients)
 
     return np.array(image_points, dtype=int), (str(int(pitch)), str(int(yaw)), str(int(roll)))
 
@@ -123,6 +127,6 @@ def draw_pose_lines(image, point, image_pts):
     :return:
     """
 
-    cv2.line(image, point, tuple(image_pts[1].ravel()), (0, 255, 0), 3)
     cv2.line(image, point, tuple(image_pts[0].ravel()), (255, 0, 0), 3)
+    cv2.line(image, point, tuple(image_pts[1].ravel()), (0, 255, 0), 3)
     cv2.line(image, point, tuple(image_pts[2].ravel()), (0, 0, 255), 3)
