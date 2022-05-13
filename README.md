@@ -1,6 +1,6 @@
 # [Face Swapping Using Meshes](https://github.com/rquit/landmarks_face_swap)
 To use this project, you will need at least python 3.6. This project has been tested and used
-extensively on python 3.10.4.
+extensively on python 3.10.4
 
 ## Instructions for Demo
 1. Install all dependencies with: `pip install -r requirements.txt`
