@@ -47,32 +47,7 @@ def get_face_landmark_list(holistic_model: holistic_model_type, image: np.ndarra
     for landmark in landmarks_list_normalized:
         x = int(landmark.x * width)
         y = int(landmark.y * height)
-        z = int(landmark.z)
         landmark_list.append((x, y))
-
-    return np.array(landmark_list, dtype=np.int32)
-
-
-def get_landmark_list_with_depth(holistic_model: holistic_model_type, image: np.ndarray)  -> np.ndarray:
-    image.flags.writeable = False
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    processed = holistic_model.process(image)
-
-    image.flags.writeable = True
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-    if not processed.face_landmarks:
-        return np.array([])
-
-    landmarks_list_normalized = processed.face_landmarks.landmark
-    landmark_list = []
-
-    width, height = image.shape[1], image.shape[0]
-    for landmark in landmarks_list_normalized:
-        x = int(landmark.x * width)
-        y = int(landmark.y * height)
-        z = int(landmark.z)
-        landmark_list.append((x, y, z))
 
     return np.array(landmark_list, dtype=np.int32)
 
