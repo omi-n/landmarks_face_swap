@@ -27,7 +27,7 @@ def get_delaunay_triangulation(landmarks: np.ndarray) -> np.ndarray:
     for x, y in landmarks:
         sub_divider.insert((int(x), int(y)))
     triangles = sub_divider.getTriangleList()
-    return np.array(triangles, dtype=np.int32)
+    return triangles
 
 
 def get_triangles_by_vertex(landmarks: np.ndarray, triangles: np.ndarray) -> np.ndarray:
@@ -67,11 +67,11 @@ def extract_indices(landmarks: np.ndarray, triangle_coordinates: list) -> (int, 
     return p_pt1[0][0], p_pt2[0][0], p_pt3[0][0]
 
 
-def extract_triangle_coordinates(landmarks: np.ndarray, triangle: np.ndarray) -> np.ndarray:
+def extract_triangle_coordinates(landmarks: np.ndarray, triangle: np.ndarray) -> list:
     pt1 = landmarks[triangle[0]]
     pt2 = landmarks[triangle[1]]
     pt3 = landmarks[triangle[2]]
-    return np.array([pt1, pt2, pt3], dtype=np.int32)
+    return [pt1, pt2, pt3]
 
 
 def draw_triangle(image, pt1, pt2, pt3):
