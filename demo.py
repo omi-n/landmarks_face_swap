@@ -50,7 +50,6 @@ while capture.isOpened():
         continue
 
     landmarks = mu.get_face_landmark_list(holistic, image)
-    landmarks_depth = mu.get_landmark_list_with_depth(holistic, image)
 
     if not landmarks.size:
         continue
