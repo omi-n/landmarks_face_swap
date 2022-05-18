@@ -64,49 +64,57 @@ def generate_fitted_mesh(image: np.ndarray,
 
     constructed_mesh = np.zeros_like(image, np.uint8)
     for triangle in swap_triangles:
-        # Get the positions of each triangle in the swap image.
-        sw_t_1, sw_t_2, sw_t_3 = tu.extract_triangle_coordinates(swap_landmarks, triangle)
-        swap_triangle_points = np.array([sw_t_1, sw_t_2, sw_t_3], dtype=np.int32)
-        swap_points, swap_cropped_triangle, _, __ = segment_triangle(swap_triangle_points, swap)
-
-        # Get the positions of each triangle in our face.
-        i_t_1, i_t_2, i_t_3 = tu.extract_triangle_coordinates(landmarks, triangle)
-        # From here, we need points to get our transform matrix. This is to transform our
-        # x and y to some new coordinates using the affine_transform later on.
-        # The cropped triangle, and mask are used to get the area which we want to swap out.
-        # The rectangle coordinates are used to get the height and width of these triangles we
-        # want to warp to.
-        image_triangle_points = np.array([i_t_1, i_t_2, i_t_3], dtype=np.int32)
-        image_points, \
-            image_cropped_triangle, \
-            image_cropped_triangle_mask, \
-            image_rectangle = segment_triangle(image_triangle_points, image)
-        (x, y, w, h) = image_rectangle
-
-        image_points = np.float32(image_points)
-        swap_points = np.float32(swap_points)
-
-        # Get the transformation matrix to get from swap_points to points.
-        transform_matrix = cv2.getAffineTransform(swap_points, image_points)
-        # Warp the cropped swap triangle to the shape of our face.
-        warped_cropped = cv2.warpAffine(swap_cropped_triangle, transform_matrix, (w, h))
-        # Bitwise AND to overlay the empty mask we got to the colors in the swap's face.
-        warped_cropped = cv2.bitwise_and(warped_cropped, warped_cropped, mask=image_cropped_triangle_mask)
-
-        # Area of the triangle to reconstruct
-        area = constructed_mesh[y:y + h, x:x + w]
-        # This helps to get rid of the white lines otherwise generated with this method.
-        area_gray = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY)
-        _, triangle_mask = cv2.threshold(area_gray, 1, 255, cv2.THRESH_BINARY_INV)
-        warped_cropped = cv2.bitwise_and(warped_cropped, warped_cropped, mask=triangle_mask)
-
-        # Add our RGB values to that cropped and warped triangle we just processed, and puts it into the new_face mask.
-        area = cv2.add(warped_cropped, area)
-        constructed_mesh[y:y + h, x:x + w] = area
+        fit_triangle(image, swap, landmarks, swap_landmarks, triangle, constructed_mesh)
 
     kernel = np.ones((2, 2), np.uint8)
     constructed_mesh = cv2.dilate(constructed_mesh, kernel, iterations=1)
     return constructed_mesh
+
+
+def fit_triangle(image: np.ndarray,
+                 swap: np.ndarray,
+                 landmarks: np.ndarray,
+                 swap_landmarks: np.ndarray,
+                 triangle: np.ndarray,
+                 constructed_mesh: np.ndarray):
+    sw_t_1, sw_t_2, sw_t_3 = tu.extract_triangle_coordinates(swap_landmarks, triangle)
+    swap_triangle_points = np.array([sw_t_1, sw_t_2, sw_t_3], dtype=np.int32)
+    swap_points, swap_cropped_triangle, _, __ = segment_triangle(swap_triangle_points, swap)
+
+    # Get the positions of each triangle in our face.
+    i_t_1, i_t_2, i_t_3 = tu.extract_triangle_coordinates(landmarks, triangle)
+    # From here, we need points to get our transform matrix. This is to transform our
+    # x and y to some new coordinates using the affine_transform later on.
+    # The cropped triangle, and mask are used to get the area which we want to swap out.
+    # The rectangle coordinates are used to get the height and width of these triangles we
+    # want to warp to.
+    image_triangle_points = np.array([i_t_1, i_t_2, i_t_3], dtype=np.int32)
+    image_points, \
+        image_cropped_triangle, \
+        image_cropped_triangle_mask, \
+        image_rectangle = segment_triangle(image_triangle_points, image)
+    (x, y, w, h) = image_rectangle
+
+    image_points = np.float32(image_points)
+    swap_points = np.float32(swap_points)
+
+    # Get the transformation matrix to get from swap_points to points.
+    transform_matrix = cv2.getAffineTransform(swap_points, image_points)
+    # Warp the cropped swap triangle to the shape of our face.
+    warped_cropped = cv2.warpAffine(swap_cropped_triangle, transform_matrix, (w, h))
+    # Bitwise AND to overlay the empty mask we got to the colors in the swap's face.
+    warped_cropped = cv2.bitwise_and(warped_cropped, warped_cropped, mask=image_cropped_triangle_mask)
+
+    # Area of the triangle to reconstruct
+    area = constructed_mesh[y:y + h, x:x + w]
+    # This helps to get rid of the white lines otherwise generated with this method.
+    area_gray = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY)
+    _, triangle_mask = cv2.threshold(area_gray, 1, 255, cv2.THRESH_BINARY_INV)
+    warped_cropped = cv2.bitwise_and(warped_cropped, warped_cropped, mask=triangle_mask)
+
+    # Add our RGB values to that cropped and warped triangle we just processed, and puts it into the new_face mask.
+    area = cv2.add(warped_cropped, area)
+    constructed_mesh[y:y + h, x:x + w] = area
 
 
 def segment_triangle(points: np.ndarray, image: np.ndarray):
